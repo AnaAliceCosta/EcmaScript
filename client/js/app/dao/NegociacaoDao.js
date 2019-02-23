@@ -2,7 +2,6 @@ class NegociacaoDao{
     constructor(connection){
         this._connection = connection;
         this._store = 'negociacoes';
-        console.log('criado dao')
     }
     
     adiciona(negociacao){
@@ -11,7 +10,6 @@ class NegociacaoDao{
                 .transaction([this._store],'readwrite')
                 .objectStore(this._store)
                 .add(negociacao);
-                console.log('passou aqui');
             request.onsuccess = e =>{
                 resolve();
             }
