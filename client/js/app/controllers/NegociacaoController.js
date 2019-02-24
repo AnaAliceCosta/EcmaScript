@@ -8,19 +8,33 @@ class NegociacaoController {
         this._listaNegociacoes = new Bind(
             new ListaNegociacoes(),
             new NegociacoesView($("#negociacoes-view")),
-            'adiciona','esvazia');
+            'adiciona', 'esvazia');
         this._mensagem = new Bind(
             new Mensagem(),
-            new MensagemView($("#negociacoes-mensagem")),'texto');
+            new MensagemView($("#negociacoes-mensagem")), 'texto');
     }
 
 
 
     adiciona(event) {
         event.preventDefault();
-        this._listaNegociacoes.adiciona(this._criaNegociacao());
-        this._mensagem.texto = "Negociacoes atualizadas com sucesso";
-        this._limpaFormulario();
+        ConnectionFactory
+            .getConnection()
+            .then(connection => {
+                let negociacao = this._criaNegociacao();
+                new NegociacaoDao(connection)
+                    .adiciona(negociacao)
+                    .then(() => {
+                        this._listaNegociacoes.adiciona(negociacao);
+                        this._mensagem.texto = "Negociacao adicionada com sucesso";
+                        this._limpaFormulario();
+                    })
+            })
+            .catch(erro => this.mensagem.texto = erro);
+        // event.preventDefault();
+        // this._listaNegociacoes.adiciona(this._criaNegociacao());
+        // this._mensagem.texto = "Negociacoes atualizadas com sucesso";
+        // this._limpaFormulario();
 
     }
     apaga() {
@@ -28,16 +42,16 @@ class NegociacaoController {
         this._mensagem.texto = "Negociações apagadas com sucesso";
 
     }
-    importaNegociacoes(){
+    importaNegociacoes() {
         let service = new NegociacaoService();
-        
+
         Promise.all([
             service.obterNegociacoesDaSemana(),
             service.obterNegociacoesDaSemanaAnterior(),
             service.obterNegociacoesDaSemanaRetrasada()]
-        ).then(negociacoes =>{
+        ).then(negociacoes => {
             negociacoes
-                .reduce((arrayAchatado,array) => arrayAchatado.concat(array),[])
+                .reduce((arrayAchatado, array) => arrayAchatado.concat(array), [])
                 .forEach(negociacao => this._listaNegociacoes.adiciona(negociacao));
             this._mensagem.texto = "Negociacoes Adicionadas com Sucesso"
         }).catch(erro => this._mensagem.texto = erro);
@@ -47,9 +61,9 @@ class NegociacaoController {
     _criaNegociacao() {
         return new Negociacao(
             DateHelper.textoParaData(this._inputData.value),
-            this._inputQuantidade.value,
-            this._inputValor.value
-        )
+            parseInt(this._inputQuantidade.value),
+            parseFloat(this._inputValor.value)
+        );
     }
     _limpaFormulario() {
         this._inputData.value = '';
